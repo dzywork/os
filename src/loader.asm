@@ -8,7 +8,8 @@ _start:
 
 .include "fat12.inc"
 
-#.section .s16
+.section .s16
+.code16
 Label_Start:
     movw %cs, %ax
     movw %ax, %ds
@@ -16,6 +17,7 @@ Label_Start:
     movw $0x00, %ax
     movw %ax, %ss
     movw $0x7c00, %sp
+
 
 #======= display on screen : Start Loader......
 
@@ -40,7 +42,7 @@ Label_Start:
     cli
 
 
-    lgdt (GdtPtr)
+    addr32 data32 lgdt (GdtPtr)
 
     movl %cr0, %eax
     orl $0x1, %eax
@@ -168,11 +170,11 @@ Label_Go_On_Loading_File:
 	pushl %esi
 
 	movw $0x200, %cx
-	movw $BaseOfKernelFile, %ax
+	movl $BaseOfKernelFile, %eax
 	movw %ax, %fs
 	movl (OffsetOfKernelFileCount), %edi
 
-	movw $BaseTmpOfKernelAddr, %ax
+	movl $BaseTmpOfKernelAddr, %eax
 	movw %ax, %ds
 	movl $OffsetTmpOfKernelFile, %esi
 
@@ -227,226 +229,459 @@ KillMotor:
 
 
 
-;=======	get memory address size type
+#=======	get memory address size type
 
-	mov	ax,	1301h
-	mov	bx,	000Fh
-	mov	dx,	0400h		;row 4
-	mov	cx,	24
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	StartGetMemStructMessage
-	int	10h
+	movw $0x1301, %ax
+	movw $0x000F, %bx
+	movw $0x400, %dx
+	movw $4, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $StartGetMemStructMessage, %ebp
+	int $0x10
 
-	mov	ebx,	0
-	mov	ax,	0x00
-	mov	es,	ax
-	mov	di,	MemoryStructBufferAddr	
+	movl $0, %ebx
+	movw $0x00, %ax
+	movw %ax, %es
+	movl $MemoryStructBufferAddr, %edi
 
 Label_Get_Mem_Struct:
 
-	mov	eax,	0x0E820
-	mov	ecx,	20
-	mov	edx,	0x534D4150
-	int	15h
-	jc	Label_Get_Mem_Fail
-	add	di,	20
+	movl $0x0E820, %eax
+	movl $0x20, %ecx
+	movl $0x534D4150, %edx
+	int $0x15
+	jc Label_Get_Mem_Fail
+	add $20, %di
 
-	cmp	ebx,	0
-	jne	Label_Get_Mem_Struct
-	jmp	Label_Get_Mem_OK
+	cmpl $0, %ebx
+	jne Label_Get_Mem_Struct
+	jmp Label_Get_Mem_OK
 
 Label_Get_Mem_Fail:
 
-	mov	ax,	1301h
-	mov	bx,	008Ch
-	mov	dx,	0500h		;row 5
-	mov	cx,	23
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	GetMemStructErrMessage
-	int	10h
-	jmp	$
+	movw $0x1301, %ax
+	movw $0x008C, %bx
+	movw $0x0500, %dx#row:5
+	movw $23, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $GetMemStructErrMessage, %ebp
+	int $0x10
+
+	jmp .
 
 Label_Get_Mem_OK:
 	
-	mov	ax,	1301h
-	mov	bx,	000Fh
-	mov	dx,	0600h		;row 6
-	mov	cx,	29
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	GetMemStructOKMessage
-	int	10h	
+	movw $0x1301, %ax
+	movw $0x000F, %bx
+	movw $0x0600, %dx#row: 6
+	movw $29, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $GetMemStructOKMessage, %ebp
+	int $0x10	
 
-;=======	get SVGA information
+#=======	get SVGA information
 
-	mov	ax,	1301h
-	mov	bx,	000Fh
-	mov	dx,	0800h		;row 8
-	mov	cx,	23
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	StartGetSVGAVBEInfoMessage
-	int	10h
+	movw $0x1301, %ax
+	movw $0x000F, %bx
+	movw $0x800, %dx
+	movw $23, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $StartGetSVGAVBEInfoMessage, %ebp
+	int $0x10
 
-	mov	ax,	0x00
-	mov	es,	ax
-	mov	di,	0x8000
-	mov	ax,	4F00h
+	movw $0x00, %ax
+	movw %ax, %es
+	movw $0x8000, %di
+	movw $0x4F00, %ax
 
-	int	10h
+	int $0x10
 
-	cmp	ax,	004Fh
+	cmpw $0x004F, %ax
 
-	jz	.KO
+	jz .KO
 	
-;=======	Fail
+#=======	Fail
 
-	mov	ax,	1301h
-	mov	bx,	008Ch
-	mov	dx,	0900h		;row 9
-	mov	cx,	23
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	GetSVGAVBEInfoErrMessage
-	int	10h
+	movw $0x1301, %ax
+	movw $0x008c, %bx
+	movw $0x900, %dx
+	movw $23, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $GetSVGAVBEInfoErrMessage, %ebp
+	int $0x10
 
-	jmp	$
+	jmp .
 
 .KO:
 
-	mov	ax,	1301h
-	mov	bx,	000Fh
-	mov	dx,	0A00h		;row 10
-	mov	cx,	29
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	GetSVGAVBEInfoOKMessage
-	int	10h
+	movw $0x1301, %ax
+	movw $0x000F, %bx
+	movw $0x0A00, %dx
+	movw $29, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $GetSVGAVBEInfoOKMessage, %ebp
+	int $0x10
 
-;=======	Get SVGA Mode Info
+#=======	Get SVGA Mode Info
 
-	mov	ax,	1301h
-	mov	bx,	000Fh
-	mov	dx,	0C00h		;row 12
-	mov	cx,	24
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	StartGetSVGAModeInfoMessage
-	int	10h
+	movw $0x1301, %ax
+	movw $0x000F, %bx
+	movw $0x0C00, %dx
+	movw $24, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $StartGetSVGAModeInfoMessage, %ebp
+	int $0x10
 
 
-	mov	ax,	0x00
-	mov	es,	ax
-	mov	si,	0x800e
+	movw $0x00, %ax
+	movw %ax, %es
+	movw $0x800E, %si
 
-	mov	esi,	dword	[es:si]
-	mov	edi,	0x8200
+	movl %es:(%si), %esi
+	movl $0x8200, %edi
 
 Label_SVGA_Mode_Info_Get:
 
-	mov	cx,	word	[es:esi]
+	movw %es:(%esi), %cx
 
-;=======	display SVGA mode information
+#=======	display SVGA mode information
 
-	push	ax
+	pushw %ax
 	
-	mov	ax,	00h
-	mov	al,	ch
-	call	Label_DispAL
+	movw $0x00, %ax
+	movb %ch, %al
+	callw Label_DispAL
 
-	mov	ax,	00h
-	mov	al,	cl	
-	call	Label_DispAL
+	movw $0x00, %ax
+	movb %cl, %al
+	call Label_DispAL
 	
-	pop	ax
+	popw %ax
 
-;=======
+#=======
 	
-	cmp	cx,	0FFFFh
-	jz	Label_SVGA_Mode_Info_Finish
+	cmpw $0x0FFFF, %cx
+	jz Label_SVGA_Mode_Info_Finish
 
-	mov	ax,	4F01h
-	int	10h
+	movw $0x4F01, %ax
+	int $0x10
 
-	cmp	ax,	004Fh
+	cmpw $0x004F, %ax
 
-	jnz	Label_SVGA_Mode_Info_FAIL	
+	jnz Label_SVGA_Mode_Info_FAIL	
 
-	add	esi,	2
-	add	edi,	0x100
+	addl $2, %esi
+	addl $0x100, %edi
 
-	jmp	Label_SVGA_Mode_Info_Get
+	jmp Label_SVGA_Mode_Info_Get
 		
 Label_SVGA_Mode_Info_FAIL:
 
-	mov	ax,	1301h
-	mov	bx,	008Ch
-	mov	dx,	0D00h		;row 13
-	mov	cx,	24
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	GetSVGAModeInfoErrMessage
-	int	10h
+	movw $0x1301, %ax
+	movw $0x008C, %bx
+	movw $0x0D00, %dx
+	movw $24, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $GetSVGAModeInfoErrMessage, %ebp
+	int $0x10
 
 Label_SET_SVGA_Mode_VESA_VBE_FAIL:
 
-	jmp	$
+	jmp .
 
 Label_SVGA_Mode_Info_Finish:
 
-	mov	ax,	1301h
-	mov	bx,	000Fh
-	mov	dx,	0E00h		;row 14
-	mov	cx,	30
-	push	ax
-	mov	ax,	ds
-	mov	es,	ax
-	pop	ax
-	mov	bp,	GetSVGAModeInfoOKMessage
-	int	10h
+	movw $0x1301, %ax
+	movw $0x000F, %bx
+	movw $0x0E00, %dx
+	movw $30, %cx
+	pushw %ax
+	movw %ds, %ax
+	movw %ax, %es
+	popw %ax
+	movl $GetSVGAModeInfoOKMessage, %ebp
+	int $0x10
 
-;=======	set the SVGA mode(VESA VBE)
+#=======	set the SVGA mode(VESA VBE)
 
-	mov	ax,	4F02h
-	mov	bx,	4180h	;========================mode : 0x180 or 0x143
-	int 	10h
+	movw $0x4F02, %ax
+	movw $0x4180, %bx #========================mode : 0x180 or 0x143
+	int $0x10
 
-	cmp	ax,	004Fh
-	jnz	Label_SET_SVGA_Mode_VESA_VBE_FAIL
+	cmpw $0x004F, %ax
+	jnz Label_SET_SVGA_Mode_VESA_VBE_FAIL
 
-;=======	init IDT GDT goto protect mode 
+#=======	init IDT GDT goto protect mode 
 
-	cli			;======close interrupt
+	cli			#======close interrupt
 
-	db	0x66
-	lgdt	[GdtPtr]
+	#db	0x66
+	lgdt (GdtPtr)
 
-;	db	0x66
-;	lidt	[IDT_POINTER]
+#	db	0x66
+#	lidt	[IDT_POINTER]
 
-	mov	eax,	cr0
-	or	eax,	1
-	mov	cr0,	eax	
+	movl %cr0, %eax
+	orl $1, %eax
+	movl %eax, %cr0
 
-	jmp	dword SelectorCode32:GO_TO_TMP_Protect
+	jmpl $SelectorCode32, $GO_TO_TMP_Protect
+
+
+
+.section .s32
+.code32
+
+GO_TO_TMP_Protect:
+
+#=======	go to tmp long mode
+
+	movw $0x10, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %ss
+	movl $0x7E00, %esp
+
+	calll support_long_mode
+	testl %eax, %eax
+
+	jz no_support
+
+#=======	init temporary page table 0x90000
+
+	movl $0x91007, (0x90000)
+
+	movl $0x91007, (0x90800)
+
+	movl $0x92007, (0x91000)
+
+	movl $0x000083, (0x92000)
+
+	movl $0x200083, (0x92008)
+
+	movl $0x400083, (0x92010)
+
+	movl $0x600083, (0x92018)
+
+	movl $0x800083, (0x92020)
+
+	movl $0xa00083, (0x92028)
+
+#=======	load GDTR
+
+	#db	0x66
+	lgdt (GdtPtr64)
+	movw $0x10, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
+	movw %ax, %ss
+
+	movl $0x7E00, %esp
+
+#=======	open PAE
+
+	movl %cr4, %eax
+	btsl $5, %eax
+	movl %eax, %cr4
+
+#=======	load	cr3
+
+	movl $0x90000, %eax
+	movl %eax, %cr3
+
+#=======	enable long-mode
+
+	movl $0x00C0000080, %ecx
+	rdmsr
+
+	btsl $8, %eax
+	wrmsr
+
+#=======	open PE and paging
+
+	movl %cr0, %eax
+	btsl $0, %eax
+	btsl $31, %eax
+	movl %eax, %cr0
+
+	jmpl $SelectorCode64, $OffsetOfKernelFile
+
+#=======	test support long mode or not
+
+support_long_mode:
+
+	movl $0x80000000, %eax
+	cpuid
+	cmpl $0x80000001, %eax
+	setnb %al	
+	jb support_long_mode_done
+	movl $0x80000001, %eax
+	cpuid
+	btl $29, %edx
+	setc %al
+support_long_mode_done:
+	
+	movzx %al, %eax
+	retl
+
+#=======	no support
+
+no_support:
+	jmp	.
+
+#=======	read one sector from floppy
+
+.section .s16lib
+.code16
+
+Func_ReadOneSector:
+	
+	pushw %bp
+	movw %sp, %bp
+	subl $2, %esp
+	movb -2(%bp), %cl
+	pushw %bx
+	movb (BPB_SecPerTrk), %bl
+	divb %bl
+	incb %ah
+	movb %ah, %cl
+	movb %al, %dh
+	shrb $1, %al
+	movb %al, %ch
+	andb $1, %dh
+	popw %bx
+	movb (BS_DrvNum), %dl
+Label_Go_On_Reading:
+	movb $2, %ah
+	movb -2(%bp), %al
+	int $0x13
+	jc Label_Go_On_Reading
+	addl $2, %esp
+	popw %bp
+	ret
+
+#=======	get FAT Entry
+
+Func_GetFATEntry:
+
+	pushw %es
+	pushw %bx
+	pushw %ax
+	movw $0, %ax
+	movw %ax, %es
+	popw %ax
+	movb $0, (Odd)
+	movw $3, %bx
+	mulw %bx
+	movw $2, %bx
+	divw %bx
+	cmpw $0, %dx
+	jz Label_Even
+	movb $1, (Odd)
+
+Label_Even:
+
+	xorw %dx, %dx
+	movw (BPB_BytesPerSec), %bx
+	divw %bx
+	pushw %dx
+	movw $0x8000, %bx
+	addw $SectorNumOfFAT1Start, %ax
+	movb $2, %cl
+	callw Func_ReadOneSector
+	
+	popw %dx
+	addw %dx, %bx
+	movw %es:(%bx), %ax
+	cmpb $1, (Odd)
+	jnz Label_Even_2
+	shrw $4, %ax
+
+Label_Even_2:
+	andw $0x0FFF, %ax
+	popw %bx
+	popw %es
+	ret
+
+#=======	display num in al
+
+Label_DispAL:
+
+	pushl %ecx
+	pushl %edx
+	pushl %edi
+	
+	movl (DisplayPosition), %edi
+	movb $0x0F, %ah
+	movb %al, %dl
+	shr $4, %al
+	movl $2, %ecx
+.begin:
+
+	andb $0x0F, %al
+	cmpb $9, %al
+	ja	.1
+	addb $'0', %al
+	jmp	.2
+.1:
+
+	subb $0x0A, %al
+	addb $'A', %al
+.2:
+
+	movw %ax, %gs:(%edi)
+	addl $2, %edi
+	
+	movb $dl, %al
+	loop .begin
+
+	movl %edi, (DisplayPosition)
+
+	popl %edi
+	popl %edx
+	popl %ecx
+	
+	ret
+*/
+
+#=======	tmp IDT
+
+IDT:
+	.rept 	0x50	
+        .8byte  0
+        .endr
+IDT_END:
+
+IDT_POINTER:
+		.2byte IDT_END - IDT - 1
+		.4byte IDT
 
 
 #=======    tmp variable
