@@ -8,8 +8,10 @@ _start:
 
 .include "fat12.inc"
 
+#.arch i8086
+
 .section .s16
-.code16
+.code32
 Label_Start:
     movw %cs, %ax
     movw %ax, %ds
@@ -42,7 +44,7 @@ Label_Start:
     cli
 
 
-    addr32 data32 lgdt (GdtPtr)
+    lgdtw (GdtPtr)
 
     movl %cr0, %eax
     orl $0x1, %eax
@@ -452,7 +454,7 @@ Label_SVGA_Mode_Info_Finish:
 	jmpl $SelectorCode32, $GO_TO_TMP_Protect
 
 
-
+.arch i686
 .section .s32
 .code32
 
@@ -558,8 +560,9 @@ no_support:
 
 #=======	read one sector from floppy
 
+
 .section .s16lib
-.code16
+.code32
 
 Func_ReadOneSector:
 	
@@ -613,7 +616,7 @@ Label_Even:
 	divw %bx
 	pushw %dx
 	movw $0x8000, %bx
-	addw $SectorNumOfFAT1Start, %ax
+	addl $SectorNumOfFAT1Start, %eax
 	movb $2, %cl
 	callw Func_ReadOneSector
 	
@@ -659,7 +662,7 @@ Label_DispAL:
 	movw %ax, %gs:(%edi)
 	addl $2, %edi
 	
-	movb $dl, %al
+	movb %dl, %al
 	loop .begin
 
 	movl %edi, (DisplayPosition)
@@ -669,7 +672,7 @@ Label_DispAL:
 	popl %ecx
 	
 	ret
-*/
+
 
 #=======	tmp IDT
 
