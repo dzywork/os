@@ -98,7 +98,7 @@
 #                 alt-space, alt-esc, ctrl-esc)
 # "autoscale"   - scale small simulation window by factor 2, 4 or 8 depending
 #                 on desktop window size
-display_library: win32, options="traphotkeys, autoscale"
+display_library: win32, options="traphotkeys, autoscale, gui_debug"
 #display_library: wx
 #display_library: x
 
@@ -801,7 +801,7 @@ floppy_bootsig_check: disabled=0
 #   log: /dev/tty
 #=======================================================================
 #log: /dev/null
-log: ./start-bochs.log
+log: startdbg-bochs.log
 
 #=======================================================================
 # LOGPREFIX:
@@ -862,7 +862,7 @@ debug: action=ignore, pci=report # report BX_DEBUG from module 'pci'
 #=======================================================================
 #debugger_log: /dev/null
 #debugger_log: debugger.out
-debugger_log: logs/debugger.log
+debugger_log: startdbg-debugger.log
 
 #=======================================================================
 # COM1, COM2, COM3, COM4:

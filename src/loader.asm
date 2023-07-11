@@ -8,6 +8,41 @@ _start:
 
 .include "fat12.inc"
 
+BaseOfKernelFile = 0x00
+OffsetOfKernelFile = 0x100000
+
+BaseTmpOfKernelAddr = 0x00
+OffsetTmpOfKernelFile = 0x7E00
+
+MemoryStructBufferAddr = 0x7E00
+
+.section gdt
+
+LABEL_GDT: .4byte 0,0
+LABEL_DESC_CODE32: .4byte 0x0000FFFF,0x00CF9A00
+LABEL_DESC_DATA32: .4byte 0x0000FFFF,0x00CF9200
+
+GdtLen = . - LABEL_GDT
+GdtPtr: .2byte GdtLen - 1
+        .4byte LABEL_GDT
+
+SelectorCode32 = LABEL_DESC_CODE32 - LABEL_GDT
+SelectorData32 = LABEL_DESC_DATA32 - LABEL_GDT
+
+
+.section gdt64
+
+LABEL_GDT64: .8byte 0x0000000000000000
+LABEL_DESC_CODE64: .8byte 0x0020980000000000
+LABEL_DESC_DATA64: .8byte 0x0000920000000000
+
+GdtLen64 = . - LABEL_GDT64
+GdtPtr64: .2byte GdtLen64 - 1
+          .4byte LABEL_GDT64
+
+SelectorCode64 = LABEL_DESC_CODE64 - LABEL_GDT64
+SelectorData64 = LABEL_DESC_DATA64 - LABEL_GDT64
+
 #.arch i8086
 
 .section .s16
@@ -563,7 +598,6 @@ no_support:
 
 .section .s16lib
 .code32
-
 Func_ReadOneSector:
 	
 	pushw %bp
@@ -712,43 +746,3 @@ GetSVGAVBEInfoOKMessage: .ascii "Get SVGA VBE Info SUCCESSFUL!"
 StartGetSVGAModeInfoMessage: .ascii "Start Get SVGA Mode Info"
 GetSVGAModeInfoErrMessage: .ascii "Get SVGA Mode Info ERROR"
 GetSVGAModeInfoOKMessage: .ascii "Get SVGA Mode Info SUCCESSFUL!"
-
-BaseOfKernelFile = 0x00
-OffsetOfKernelFile = 0x100000
-
-BaseTmpOfKernelAddr = 0x00
-OffsetTmpOfKernelFile = 0x7E00
-
-MemoryStructBufferAddr = 0x7E00
-
-
-#.section gdt
-
-LABEL_GDT: .4byte 0,0
-LABEL_DESC_CODE32: .4byte 0x0000FFFF,0x00CF9A00
-LABEL_DESC_DATA32: .4byte 0x0000FFFF,0x00CF9200
-
-GdtLen = . - LABEL_GDT
-GdtPtr: .2byte GdtLen - 1
-        .4byte LABEL_GDT
-
-SelectorCode32 = LABEL_DESC_CODE32 - LABEL_GDT
-SelectorData32 = LABEL_DESC_DATA32 - LABEL_GDT
-
-
-#.section gdt64
-
-LABEL_GDT64: .8byte 0x0000000000000000
-LABEL_DESC_CODE64: .8byte 0x0020980000000000
-LABEL_DESC_DATA64: .8byte 0x0000920000000000
-
-GdtLen64 = . - LABEL_GDT64
-GdtPtr64: .2byte GdtLen64 - 1
-          .4byte LABEL_GDT64
-
-SelectorCode64 = LABEL_DESC_CODE64 - LABEL_GDT64
-SelectorData64 = LABEL_DESC_DATA64 - LABEL_GDT64
-
-
-
-
