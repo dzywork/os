@@ -1,7 +1,9 @@
 #======= loader.bin
 
 .text
-.global _start
+.code16
+.global _start,main
+main:
 _start:
     jmp Label_Start
 
@@ -16,7 +18,7 @@ OffsetTmpOfKernelFile = 0x7E00
 
 MemoryStructBufferAddr = 0x7E00
 
-.section gdt
+.section gdt, "adw"
 
 LABEL_GDT: .4byte 0,0
 LABEL_DESC_CODE32: .4byte 0x0000FFFF,0x00CF9A00
@@ -30,7 +32,7 @@ SelectorCode32 = LABEL_DESC_CODE32 - LABEL_GDT
 SelectorData32 = LABEL_DESC_DATA32 - LABEL_GDT
 
 
-.section gdt64
+.section gdt64, "adw"
 
 LABEL_GDT64: .8byte 0x0000000000000000
 LABEL_DESC_CODE64: .8byte 0x0020980000000000
@@ -43,10 +45,9 @@ GdtPtr64: .2byte GdtLen64 - 1
 SelectorCode64 = LABEL_DESC_CODE64 - LABEL_GDT64
 SelectorData64 = LABEL_DESC_DATA64 - LABEL_GDT64
 
-#.arch i8086
 
-.section .s16
-.code32
+.section .s16,"axw"
+.code16
 Label_Start:
     movw %cs, %ax
     movw %ax, %ds
@@ -66,7 +67,7 @@ Label_Start:
     movw %ds, %ax
     movw %ax, %es
     popw %ax
-    movl $StartLoaderMessage, %ebp#此处使用bp不可以
+    movw $StartLoaderMessage, %bp#此处使用bp不可以
     int $0x10
 
 #=======    open address A20
@@ -113,7 +114,7 @@ Lable_Search_In_Root_Dir_Begin:
     movw (SectorNo), %ax
     movb $1, %cl
     callw Func_ReadOneSector
-    movl $KernelFileName, %esi
+    movw $KernelFileName, %si
     movw $0x8000, %di
     cld
     movw $0x10, %dx
@@ -144,7 +145,7 @@ Label_Different:
 
     andw $0x0FFE0, %di
     addw $0x20, %di
-    movl $KernelFileName, %esi
+    movw $KernelFileName, %si
     jmp Label_Search_For_LoaderBin
 
 Label_Goto_Next_Sector_In_Root_Dir:
@@ -165,7 +166,7 @@ Label_No_LoaderBin:
     movw %ds, %ax
     movw %ax, %es
     popw %ax
-    movl $NoLoaderMessage, %ebp
+    movw $NoLoaderMessage, %bp
     int $0x10
     jmp .
 
@@ -179,8 +180,8 @@ Label_FileName_Found:
 	pushw %cx
 	addw %ax, %cx
 	addw $SectorBalance, %cx
-	movl $BaseTmpOfKernelAddr, %eax#BaseOfKernelFile
-	movl %eax, %es
+	movw $BaseTmpOfKernelAddr, %ax#BaseOfKernelFile
+	movw %ax, %es
 	movw $OffsetTmpOfKernelFile, %bx#OffsetOfKernelFile
 	movw %cx, %ax
 
@@ -207,13 +208,13 @@ Label_Go_On_Loading_File:
 	pushl %esi
 
 	movw $0x200, %cx
-	movl $BaseOfKernelFile, %eax
+	movw $BaseOfKernelFile, %ax
 	movw %ax, %fs
 	movl (OffsetOfKernelFileCount), %edi
 
-	movl $BaseTmpOfKernelAddr, %eax
+	movw $BaseTmpOfKernelAddr, %ax
 	movw %ax, %ds
-	movl $OffsetTmpOfKernelFile, %esi
+	movw $OffsetTmpOfKernelFile, %si
 
 Label_Mov_Kernel:	#------------------
 	
@@ -490,7 +491,7 @@ Label_SVGA_Mode_Info_Finish:
 
 
 .arch i686
-.section .s32
+.section .s32,"ax"
 .code32
 
 GO_TO_TMP_Protect:
@@ -596,13 +597,13 @@ no_support:
 #=======	read one sector from floppy
 
 
-.section .s16lib
-.code32
+.section .s16lib,"axw"
+.code16
 Func_ReadOneSector:
 	
 	pushw %bp
 	movw %sp, %bp
-	subl $2, %esp
+	subw $2, %sp
 	movb -2(%bp), %cl
 	pushw %bx
 	movb (BPB_SecPerTrk), %bl
